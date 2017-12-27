@@ -40,10 +40,28 @@ $if(background-image)$
 }
 $endif$
 \usepackage{pgfpages}
-\setbeamertemplate{caption}[numbered]
-\setbeamertemplate{caption label separator}{: }
-\setbeamercolor{caption name}{fg=normal text.fg}
+\usepackage{multimedia}
+\usepackage{animate}
+\usepackage{appendixnumberbeamer}
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+\setbeamertemplate{caption label separator}{}
+\setbeamercolor{caption name}{fg=white}
+%\setbeameroption{show notes}
 \beamertemplatenavigationsymbols$if(navigation)$$navigation$$else$empty$endif$
+$else$
+$if(tlsphd)$
+\usepackage[ED=$tlsphded$, Ets=$tlsphdets$]{tlsflyleaf}
+$endif$
+\usepackage{tabularx}
+\usepackage[table]{xcolor}
+\usepackage[section]{placeins}
+\usepackage{fancyhdr}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{ifthen}
+\usepackage[contents={},opacity=1,scale=1]{background}
+\algnewcommand{\Commente}[1]{\hfill #1}
+
 $for(beameroption)$
 \setbeameroption{$beameroption$}
 $endfor$
@@ -99,11 +117,13 @@ $endif$
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
   \usepackage[$if(fontenc)$$fontenc$$else$T1$endif$]{fontenc}
   \usepackage[utf8]{inputenc}
+  %\DeclareUnicodeCharacter{2011}{\nobreakdash} TODO: remove ?
   \usepackage{textcomp} % provide euro and other symbols
 \else % if luatex or xetex
 $if(mathspec)$
   \ifxetex
     \usepackage{mathspec}
+    \usepackage{fontspec}
   \else
     \usepackage{unicode-math}
   \fi
@@ -140,6 +160,12 @@ $if(CJKmainfont)$
     \usepackage[space]{xeCJK}
     \setCJKmainfont[$for(CJKoptions)$$CJKoptions$$sep$,$endfor$]{$CJKmainfont$}
   \fi
+$endif$
+$if(Jmainfont)$
+    \setmainjfont{$Jmainfont$}
+$endif$
+$if(Jsansfont)$
+    \setsansjfont{$Jsansfont$}
 $endif$
 $if(luatexjapresetoptions)$
   \ifluatex
@@ -223,8 +249,9 @@ $if(colorlinks)$
 $else$
   hidelinks,
 $endif$
+  breaklinks=true,
   pdfcreator={LaTeX via pandoc}}
-\urlstyle{same} % disable monospaced font for URLs
+\urlstyle{tt}
 $if(verbatim-in-note)$
 \VerbatimFootnotes % allow verbatim text in footnotes
 $endif$
@@ -254,6 +281,7 @@ $if(tables)$
 \usepackage{longtable,booktabs}
 $if(beamer)$
 \usepackage{caption}
+\captionsetup[figure]{labelformat=empty,labelsep=none}
 % Make caption package work with longtable
 \makeatletter
 \def\fnum@table{\tablename~\thetable}
@@ -369,7 +397,7 @@ $if(csl-refs)$
 $endif$
 
 $if(title)$
-\title{$title$$if(thanks)$\thanks{$thanks$}$endif$}
+\title$if(shorttitle)$[$shorttitle$]$endif${$title$$if(thanks)$\thanks{$thanks$}$endif$}
 $endif$
 $if(subtitle)$
 $if(beamer)$
@@ -397,15 +425,41 @@ $if(logo)$
 $endif$
 $endif$
 
+\usepackage{bm}
+$if(beamer)$
+\usepackage[$if(duration)$duration=$duration$,$endif$$if(notesize)$notesize=$notesize$,$endif$]{pdfpcnotes}
+$else$
+$if(tlsphd)$
+\defencedate{$defencedate$}
+\lab{$lab$}
+\nboss{$nboss$}
+$for(boss)$
+\makesomeone{boss}{1}{$boss$}{}{}
+$endfor$
+\nreferee{$nreferee$}
+$for(referee)$
+\makesomeone{referee}{$referee.n$}{$referee.name$}{}{}
+$endfor$
+\njudge{$njudge$}
+$for(judge)$
+\makesomeone{judge}{$judge.n$}{$judge.name$}{$judge.title$}{$judge.status$}
+$endfor$
+$endif$
+$endif$
+
 \begin{document}
 $if(has-frontmatter)$
 \frontmatter
 $endif$
 $if(title)$
 $if(beamer)$
-\frame{\titlepage}
+%\frame{\titlepage}
+$else$
+$if(tlsphd)$
+\makeflyleaf
 $else$
 \maketitle
+$endif$
 $endif$
 $if(abstract)$
 \begin{abstract}
@@ -413,6 +467,22 @@ $abstract$
 \end{abstract}
 $endif$
 $endif$
+
+$if(flipbook)$
+\AddEverypageHook{%
+\ifthenelse{\isodd{\value{page}}}%
+{\backgroundsetup{
+angle=0,
+position={17.1cm-$flipbookmargin$*.5,-23.4cm+$flipbookmargin$*.5},
+contents={\includegraphics[width=3.8cm-$flipbookmargin$]{$flipbook$-\arabic{page}}}
+}}{\backgroundsetup{
+angle=0,
+position={-0.8cm+$flipbookmargin$*.5,-23.4cm+$flipbookmargin$*.5},
+contents={\includegraphics[width=3.8cm-$flipbookmargin$]{$flipbook$-\arabic{page}}}
+}}%
+\BgMaterial}
+$endif$
+
 
 $for(include-before)$
 $include-before$
@@ -427,7 +497,7 @@ $if(beamer)$
 $if(toc-title)$
   \frametitle{$toc-title$}
 $endif$
-  \tableofcontents[hideallsubsections]
+  \tableofcontents
 \end{frame}
 $else$
 {
@@ -439,18 +509,31 @@ $endif$
 }
 $endif$
 $endif$
-$if(lot)$
-\listoftables
+
+$if(loaname)$
+\renewcommand{\listalgorithmname}{$loaname$}
 $endif$
+
+
 $if(lof)$
 \listoffigures
 $endif$
 $if(linestretch)$
 \setstretch{$linestretch$}
 $endif$
+$if(loa)$
+\listofalgorithms
+$endif$
+$if(lot)$
+\listoftables
+$endif$
+$if(lol)$
+\listoflistings
+$endif$
 $if(has-frontmatter)$
 \mainmatter
 $endif$
+
 $body$
 
 $if(has-frontmatter)$
