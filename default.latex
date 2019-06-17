@@ -453,7 +453,7 @@ $if(has-frontmatter)$
 $endif$
 $if(title)$
 $if(beamer)$
-%\frame{\titlepage}
+\frame{\titlepage}
 $else$
 $if(tlsphd)$
 \makeflyleaf
